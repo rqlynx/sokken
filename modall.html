@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Node.js socketio-->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.2/css/all.css"
+        integrity="sha384-/rXc/GQVaYpyDdyxK+ecHPVYJSN9bmVFBvjA/9eOB+pb3F2w2N6fc5qB9Ew5yIns" crossorigin="anonymous">
+
+    <!-- Color Picker -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/i18n/jquery.spectrum-ja.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.css">
+    <script>
+            jQuery(function($){
+                $("#picker").spectrum();
+            });
+        </script> -->
+    <!-- CSS Override -->
+    <style>
+        .chatlogs{
+            
+            width: auto;
+            height: 150px;
+            line-height: normal;
+            margin-top: 20px;
+            border: solid;
+            background-color: ghostwhite;
+        }
+        .memo-area{
+            margin:20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- コンテナ -->
+    <div class="container">
+        <!-- 1行目 -->
+        <div class="row">
+            <!-- チャット -->
+            <div class="col-sm-6">
+                <ul class="list-unstyled overflow chatlogs" id="messages" style="overflow: auto;"></ul>
+                <form class="form-row"id="message_form" action="#">
+                    <!-- <input type="text" id="picker"> -->
+                    <input class="col-sm-3"id="input-name" autocomplete="off" placeholder="名前" />
+                    <input class="col-sm-7"id="input-msg" autocomplete="off"/>
+                    <button class="col-sm-2 btn btn-default rounded-0 float-right">送信</button>
+                </form>
+            </div>
+            <!-- チャット 終端 -->
+            <!-- メモ-->
+            <div class="col-sm-6">
+                <button type="button" class="add-memo btn btn-default rounded-0">メモを作成</button>
+                <!-- ここにメモの一覧が出てくるよ -->
+                <div class="memo-area">
+                </div>
+            </div>
+            <!-- メモ 終端 -->
+        </div>
+        <!-- 1行目 終端 -->
+    </div>
+    <!-- コンテナ 終端-->
+    <!-- モーダルウィンドウ -->
+    <div class="modal-area">
+
+    </div>
+    
+    <div id="modal02" class="modal js-modal">
+        <div class="modal-bg js-modal-close"></div>
+        <div class="modal-content">
+            <p>2つ目モーダルウィンドウです。ここにモーダルウィンドウで表示したいコンテンツを入れます。モーダルウィンドウを閉じる場合は下の「閉じる」をクリックするか、背景の黒い部分をクリックしても閉じることができます。</p>
+            <a class="js-modal-close" href="">閉じる</a>
+        </div><!--modal__inner-->
+    </div><!--modal-->
+
+    <!-- Optional JavaScript -->
+
+    <!-- Socket -->
+    <script>
+
+        var cnt = 0;
+        var socketio = io();
+        $(function () {
+            /* to Server */
+
+            //Chat
+            $('#message_form').submit(function () {
+                var submitMsg = document.getElementById('input-msg').value;
+                var submitName = document.getElementById('input-name').value;
+                socketio.emit('message', submitName + ":" +submitMsg);
+                $('#input-msg').val('');
+                return false;
+            });
+
+            //saveMemo
+            $(document).on("click", "#save-memo", function(){
+                var context = document.getElementById('memo_space').value;
+                socketio.emit('saveMemo',context);
+                return false;
+            });
+
+            //addMemos
+            $(document).on("click", ".add-memo", function () {
+                var addMemo =
+                    '<button type="button" class="js-modal-open btn btn-primary rounded-0 mb-12" data-target="memo' + cnt + '" >メモ' + (cnt + 1) + '</button>';
+                socketio.emit('addMemo', addMemo);
+                cnt++;
+                return false;
+            });
+
+            /* from Server */
+            
+            //Chat
+            socketio.on('message', function (msg) {
+                var now = new Date();
+                var hour = now.getHours();
+                var min = now.getMinutes();
+                var sec = now.getSeconds();
+                var submitMsg = document.getElementById('input-msg').value;
+                msg = "[" + hour + ":" + min + ":" + sec + "]" + msg;
+                $('#messages').append($('<li>').text(msg + submitMsg));
+            });
+            //addMemo
+            socketio.on('addMemo',function(html){
+                $(".memo-area").append(html);
+            })
+            //saveMemo
+            socketio.on('saveMemo',function(context){
+                document.getElementById("memo_space").value = context;
+            });
+        });
+    </script>
+    <!-- Modal -->
+    <script>
+        $(function(){
+            $('.js-modal-open').each(function(){
+                $(this).on('click',function(){
+                    var target = $(this).data('target');
+                    var modal = document.getElementById(target);
+                    $(modal).fadeIn();
+                    return false;
+                });
+            });
+            $('.js-modal-close').on('click',function(){
+                $('.js-modal').fadeOut();
+                return false;
+            }); 
+        });
+    </script>
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous">
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+        integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous">
+    </script>
+</body>
+
+</html>
