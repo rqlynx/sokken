@@ -26,8 +26,6 @@ io.on('connection', function (socket) {
 		console.log("user is connected");
 	}
 
-
-
 	/* Client -> Server -> Client */
 
 	//Sink <chat>
